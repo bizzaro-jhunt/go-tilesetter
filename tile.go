@@ -102,7 +102,12 @@ func tarball(raw io.Reader, prefix string) {
 }
 
 func main() {
-	r, err := zip.OpenReader("p-gemfire-1.6.0.0.pivotal")
+	if len(os.Args) != 2 {
+		fmt.Fprintf(os.Stderr, "USAGE: %s path/to/tile.pivotal\n", os.Args[0])
+		os.Exit(1)
+	}
+	fmt.Printf("[%s]\n", os.Args[1])
+	r, err := zip.OpenReader(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
