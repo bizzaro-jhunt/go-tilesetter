@@ -108,7 +108,7 @@ func main() {
 	}
 	defer r.Close()
 
-	tgz = regexp.MustCompile(".tgz$")
+	tgz = regexp.MustCompile("(releases|jobs).*.tgz$")
 	yml = regexp.MustCompile(".(yml|MF)$")
 
 	// Iterate through the files in the archive,
