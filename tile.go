@@ -3,7 +3,9 @@ package main
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"compress/gzip"
+	"crypto/sha1"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -137,10 +139,18 @@ func unpackTile(path string) (Tile, error) {
 	return t, nil
 }
 
-func unpackRelease(f io.Reader) (Release, error) {
+func unpackRelease(f io.ReadCloser) (Release, error) {
 	var r Release
 
-	gz, err := gzip.NewReader(f)
+	tarball, err := ioutil.ReadAll(f)
+	if err != nil {
+		return r, err
+	}
+	f.Close()
+
+	r.Sha1 = fmt.Sprintf("%x", sha1.Sum(tarball))
+
+	gz, err := gzip.NewReader(bytes.NewBuffer(tarball))
 	if err != nil {
 		return r, err
 	}
@@ -197,6 +207,10 @@ func unpackRelease(f io.Reader) (Release, error) {
 
 	if includeSpec() {
 		r.Spec = string(spec)
+	}
+	root := os.Getenv("TARBALLS")
+	if root != "" {
+		err = ioutil.WriteFile(fmt.Sprintf("%s/%s-%s.tgz", root, r.Name, r.Version), tarball, 0666)
 	}
 	return r, nil
 }
