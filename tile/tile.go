@@ -1,4 +1,4 @@
-package main
+package tile
 
 import (
 	"archive/tar"
@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"regexp"
 
@@ -37,9 +36,6 @@ func init() {
 
 	TileSpecFilePattern = regexp.MustCompile("^metadata/tile_metadata\\.yml$")
 }
-
-var tgz *regexp.Regexp
-var yml *regexp.Regexp
 
 type Template struct {
 	Path     string
@@ -77,7 +73,7 @@ func includeSpec() bool {
 	return os.Getenv("NOSPEC") == ""
 }
 
-func unpackTile(path string) (Tile, error) {
+func Unpack(path string) (Tile, error) {
 	var t Tile
 
 	z, err := zip.OpenReader(path)
@@ -297,23 +293,4 @@ func unpackJob(f io.Reader) (Job, error) {
 		j.Spec = string(spec)
 	}
 	return j, nil
-}
-
-func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintf(os.Stderr, "USAGE: %s path/to/tile.pivotal\n", os.Args[0])
-		os.Exit(1)
-	}
-
-	fmt.Printf("# %s\n", os.Args[1])
-	t, err := unpackTile(os.Args[1])
-	if err != nil {
-		log.Fatal(err)
-	}
-	s, err := yaml.Marshal(t)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%s", s)
-	return
 }
