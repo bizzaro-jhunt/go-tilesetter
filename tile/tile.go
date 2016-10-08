@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -38,35 +39,57 @@ func init() {
 }
 
 type Template struct {
-	Path     string
-	Contents string
+	Path     string `json:"path"`
+	Contents string `json:"contents"`
 }
 
 type Property struct {
-	Description string
-	Default     interface{} `yaml:"default,omitempty"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Default     interface{} `json:"default,omitempty"`
 }
 
 type Job struct {
-	Name       string
-	Spec       string `yaml:"spec,omitempty"`
-	Properties map[string]Property
-	Templates  []Template
+	Name       string     `json:"name"`
+	Spec       string     `json:"spec,omitempty"`
+	Properties []Property `json:"properties"`
+	Templates  []Template `json:"templates"`
 }
 
 type Release struct {
-	Name    string
-	Spec    string `yaml:"spec,omitempty"`
-	Version string
-	Sha1    string
-	Jobs    []Job
+	Name    string `json:"name"`
+	Spec    string `json:"spec,omitempty"`
+	Version string `json:"version"`
+	Sha1    string `json:"sha1"`
+	Jobs    []Job  `json:"jobs"`
 }
 
 type Tile struct {
-	Name     string
-	Spec     string `yaml:"spec,omitempty"`
-	Releases []Release
-	Version  string
+	Name     string    `json:"name"`
+	Spec     string    `json:"spec,omitempty"`
+	Releases []Release `json:"releases"`
+	Version  string    `json:"version"`
+}
+
+type MatchingProperty struct {
+	Property
+	Info    Property `json:"info"`
+	Job     string   `json:"job"`
+	Release string   `json:"release"`
+	Tile    struct {
+		Name    string `json:"name"`
+		Version string `json:"version"`
+	} `json:"tile"`
+}
+
+type MatchingTemplate struct {
+	Template
+	Job     string `json:"job"`
+	Release string `json:"release"`
+	Tile    struct {
+		Name    string `json:"name"`
+		Version string `json:"version"`
+	} `json:"tile"`
 }
 
 func includeSpec() bool {
@@ -265,18 +288,20 @@ func unpackJob(f io.Reader) (Job, error) {
 		return j, fmt.Errorf("no name present in job spec")
 	}
 
-	j.Properties = make(map[string]Property)
+	j.Properties = make([]Property, 0)
 	if _props, ok := d["properties"]; ok {
 		for k, _v := range _props.(map[interface{}]interface{}) {
 			v := _v.(map[interface{}]interface{})
-			p := Property{}
+			p := Property{
+				Name: fmt.Sprintf("%s", k),
+			}
 			if x, ok := v["description"]; ok {
 				p.Description = fmt.Sprintf("%s", x)
 			}
 			if x, ok := v["default"]; ok {
 				p.Default = x
 			}
-			j.Properties[fmt.Sprintf("%s", k)] = p
+			j.Properties = append(j.Properties, p)
 		}
 	}
 
@@ -293,4 +318,77 @@ func unpackJob(f io.Reader) (Job, error) {
 		j.Spec = string(spec)
 	}
 	return j, nil
+}
+
+func (t Tile) MatchProperty(pattern string) []MatchingProperty {
+	l := make([]MatchingProperty, 0)
+
+	for _, r := range t.Releases {
+		for _, j := range r.Jobs {
+			for _, p := range j.Properties {
+				if strings.Contains(p.Name, pattern) {
+					m := MatchingProperty{
+						Property: p,
+						Job:      j.Name,
+						Release:  r.Name,
+					}
+					m.Tile.Name = t.Name
+					m.Tile.Version = t.Version
+
+					l = append(l, m)
+				}
+			}
+		}
+	}
+	return l
+}
+
+func (t Tile) MatchTemplates(props []MatchingProperty) []MatchingTemplate {
+	l := make([]MatchingTemplate, 0)
+	erbMatch := regexp.MustCompile("<%.*?%>")
+
+	for _, r := range t.Releases {
+		for _, j := range r.Jobs {
+		template:
+			for _, tpl := range j.Templates {
+				for _, erb := range erbMatch.FindAllString(tpl.Contents, -1) {
+					for _, prop := range props {
+						/* whoa, that's a deep for loop nest */
+						if ok, _ := regexp.MatchString(prop.Name, erb); ok {
+							m := MatchingTemplate{
+								Template: tpl,
+								Job:      j.Name,
+								Release:  r.Name,
+							}
+							m.Tile.Name = t.Name
+							m.Tile.Version = t.Version
+
+							l = append(l, m)
+							continue template
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return l
+}
+
+func (t Tile) FindRelease(name string) (Release, bool) {
+	for _, r := range t.Releases {
+		if r.Name == name {
+			return r, true
+		}
+	}
+	return Release{}, false
+}
+
+func (r Release) FindJob(name string) (Job, bool) {
+	for _, j := range r.Jobs {
+		if j.Name == name {
+			return j, true
+		}
+	}
+	return Job{}, false
 }

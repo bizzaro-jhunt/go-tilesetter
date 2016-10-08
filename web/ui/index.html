@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>tilesetter</title>
+  <style type="text/css">
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+ol, ul {
+  list-style: none;
+}
+blockquote, q {
+  quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+/********************************************/
+body {
+  font-family: Arial, Verdana, Helvetica;
+}
+header {
+  background-color: #000;
+  padding: 2px 4px;
+  color: white;
+}
+header a {
+  color: inherit;
+  text-decoration: none;
+}
+#splash {
+  background: #444 url(tiles.png) 50% 50% no-repeat;
+  padding: 140px 0;
+  border-bottom: 8px solid #000;
+}
+#splash label {
+  color: white;
+  font-weight: bold;
+  display: block;
+}
+#splash input {
+  font-size: 28pt;
+  border: 0;
+  padding: 2px 4px;
+}
+header span,
+#splash form,
+#main {
+  display: block;
+  width: 80%;
+  margin: 0 auto;
+}
+#main {
+  padding: 1em 0;
+}
+ol.files > li,
+ol.props > li {
+  display: block;
+  margin: 1em 0 3em 0;
+}
+ol.files .where,
+ol.props .where {
+}
+ol.files .where li,
+ol.props .where li {
+  display: inline;
+}
+ol.files .where li a,
+ol.props .where li a {
+  text-decoration: none;
+  color: slateblue;
+}
+ol.files .where li:after,
+ol.props .where li:after {
+  content: " \bb ";
+  color: #aaa;
+}
+ol.files > li h1,
+ol.props > li h1 {
+  font-size: 18pt;
+  font-weight: bold;
+  color: #ccc;
+}
+ol.files > li span.dir {
+  color: #aaa;
+}
+ol.files > li span.file,
+ol.props > li span.prop {
+  color: darkblue;
+}
+li span.default,
+ol.props > li span.default {
+  color: purple;
+}
+
+ol.props p {
+  margin: 1em 2em 2em 2em;
+}
+
+ol.files code {
+  background-color: #333;
+  display: none;
+  width: 100%;
+  color: white;
+  font: 9.5pt monospace;
+  line-height: 1.3em;
+}
+ol.files pre {
+  display: block;
+  white-space: pre-wrap;
+  background-color: inherit;
+  color: inherit;
+  padding: 1em;
+}
+ol.files li {
+  margin-bottom: 2em;
+}
+
+a.showhide {
+  color: #aaa;
+  text-decoration: none;
+}
+
+.detail > h2 {
+  background-color: indigo;
+  color: white;
+  padding: 0.5em;
+}
+.detail ol.props,
+.detail ol.files {
+  margin-left: 2em;
+  margin-right: 2em;
+}
+
+.detail {
+}
+.detail h1 {
+  font-size: 36pt;
+  margin: 0.5em 0;
+}
+.detail h1 .sub {
+  display: block;
+  font-size: 12pt;
+  margin-left: 40px;
+}
+.detail h1 .sub a {
+  font-weight: bold;
+  text-decoration: none;
+  border-bottom: 1px dotted darkblue;
+}
+.detail h2 {
+  font-size: 18pt;
+}
+.detail ul {
+  padding-left: 2em;
+  list-style: disc;
+  margin: 1em 0;
+}
+
+pre .erb {
+  color: yellow;
+}
+pre .hi {
+  color: lime;
+}
+
+footer {
+  text-align: center;
+  padding: 2em 0 1em 0;
+  font-size: 9.5pt;
+  color: #aaa;
+}
+
+#landing h1,
+#catalog h1 {
+  font-size: 36pt;
+  margin: 0.75em 0 0.15em 0;
+  text-align: center;
+}
+
+.col3 {
+  overflow: hidden;
+}
+.col3 p {
+  display: block;
+  width: 28%;
+  float: left;
+  padding: 2.3%;
+  text-align: justify;
+}
+.col3 p img {
+  display: block;
+  margin: 20px auto;
+}
+  </style>
+  <script type="text/javascript" src="jquery-3.1.1.min.js"></script>
+  <script type="text/javascript">
+    $(function() {
+        var pathify = function (p) {
+            return p.replace(/(\/var\/vcap\/jobs\/)(.*)/, '<span class="dir">$1</span><span class="file">$2</span>');
+        };
+
+        var erb = function (t, search) {
+            t = $('<div>').text(t).html();
+            t = t.replace(/(&lt;%.*?%&gt;)/g, '<span class="erb">$1</span>');
+            if (search) {
+                $.each(search, function (i, s) {
+                    t = t.replace(new RegExp('(>&lt;%.*?)('+s+')(.*?%&gt;<)', 'g'), '$1<span class="hi">$2</span>$3');
+                });
+            }
+            return t;
+        };
+
+        var withDefault = function (v) {
+            if (typeof(v) === "undefined") {
+                return '';
+            }
+            if (v == "") {
+                v = "\"\"";
+            }
+            return ' = <span class="default">' + v + '</span>';
+        };
+
+        var propList = function (properties) {
+            html = '<h2>Properties</h2><ol class="props">';
+            properties = properties.sort(function (a, b) {
+                var _a = a.name.toLowerCase();
+                var _b = b.name.toLowerCase();
+                return (_a > _b) ?  1
+                     : (_a < _b) ? -1
+                     : 0;
+            });
+            $.each(properties, function (name, p) {
+                html += '<li>';
+                if (p.tile && p.release && p.job) {
+                    var u = p.tile.name + '/' + p.tile.version;
+                    var r = u + '/' + p.release;
+                    var j = r + '/' + p.job;
+                    html += '<ol class="where">\n' +
+                              '<li><a href="#!/'+u+'">' + p.tile.name + ' (' + p.tile.version + ')</a></li>\n' +
+                              '<li><a href="#!/'+r+'">' + p.release + '</a></li>\n' +
+                              '<li><a href="#!/'+j+'">' + p.job + '</a></li>\n' +
+                            '</ol>\n';
+                }
+                html += '<h1><span class="prop">' + p.name + '</span>' +
+                             withDefault(p.default) + '</h1>' +
+                        '<p>' + p.description + '</p></li>';
+            });
+            html += '</ol>';
+            return html;
+        };
+
+        var tplList = function (templates, search) {
+            templates = templates.sort(function (a, b) {
+                var _a = a.path.toLowerCase();
+                var _b = b.path.toLowerCase();
+                return (_a > _b) ?  1
+                     : (_a < _b) ? -1
+                     : 0;
+            });
+            html = '<h2>Templates</h2><ol class="files">';
+            $.each(templates, function (_, t) {
+                html += '<li>';
+                if (t.tile && t.release && t.job) {
+                    var u = t.tile.name + '/' + t.tile.version;
+                    var r = u + '/' + t.release;
+                    var j = r + '/' + t.job;
+                    html += '<ol class="where">\n' +
+                              '<li><a href="#!/'+u+'">' + t.tile.name + ' (' + t.tile.version + ')</a></li>\n' +
+                              '<li><a href="#!/'+r+'">' + t.release + '</a></li>\n' +
+                              '<li><a href="#!/'+j+'">' + t.job + '</a></li>\n' +
+                            '</ol>\n';
+                }
+                html += '<h1>' + pathify(t.path) + ' <a href="#" class="showhide">+</a></h1>' +
+                         '<code><pre>' + erb(t.contents, search) + '</pre></code></li>';
+            });
+            html += '</ol>';
+            return html;
+        };
+
+        $('#splash form').submit(function (event) {
+            event.preventDefault();
+            document.location.hash = '#!/q/' + encodeURIComponent($('#splash input').val());
+        });
+        $(window).on('hashchange', function(event) {
+            var p = document.location.hash.split('/');
+            if (p[0] == "#!") {
+                $('#splash').animate({ padding: '20px 0' }, 1200);
+                if (p.length == 3 && p[1] == "q") {  //    /#!/q/search
+                    $.ajax({
+                        type: 'GET',
+                        url:  '/v1/search?q=' + encodeURIComponent(p[2]),
+                        success: function (data) {
+                            var html = '';
+                            html += propList(data.properties);
+                            html += tplList(data.templates, $.map(data.properties, function (p) { return p.name; }));
+                            $('#main').html('<div id="results" class="detail">' + html + '</div>');
+                        }
+                    })
+                } else if (p.length == 3) {          //    /#!/tile/version
+                    $.ajax({
+                        type: 'GET',
+                        url:  '/v1/tiles/' + encodeURIComponent(p[1]) + '/' + encodeURIComponent(p[2]),
+                        success: function (data) {
+                            var t = data.name + '/' + data.version;
+                            var html = '';
+                            html += '<h1><img src="/ico.tile.png" />' +
+                                         data.name + ' ' + data.version + '</h1>';
+
+                            $.each(data.releases, function (_, r) {
+                                html += '<h2>' + r.name + '</h2><ul>';
+                                $.each(r.jobs, function (_, j) {
+                                    html += '<li><a href="#!/'+t+'/'+r.name+'/'+j.name+'">' + j.name + '</a></li>';
+                                });
+                                html += '</ul>'
+                            });
+
+                            $('#main').html('<div id="tile" class="detail">'+html+'</div>');
+                        }
+                    });
+
+                } else if (p.length == 4) {   //    /#!/tile/version/release
+                    $.ajax({
+                        type: 'GET',
+                        url:  '/v1/tiles/' + encodeURIComponent(p[1]) + '/' + encodeURIComponent(p[2]) + '/' + encodeURIComponent(p[3]),
+                        success: function (data) {
+                            var t = data.tile.name + '/' + data.tile.version;
+                            var html = '';
+                            html += '<h1><img src="/ico.release.png" />' +
+                                         data.release.name + '  <span class="sub">' +
+                                         'part of <a href="#!/' + data.tile.name + '/' + data.tile.version + '">' +
+                                             data.tile.name + ' (' + data.tile.version + ')</a></span></h1>';
+
+                            html += '<h2>Jobs</h2><ul>';
+                            $.each(data.release.jobs, function (_, j) {
+                                html += '<li><a href="#!/'+t+'/'+data.release.name+'/'+j.name+'">' + j.name + '</a></li>';
+                            });
+                            html += '</ul>'
+
+                            $('#main').html('<div id="release" class="detail">'+html+'</div>');
+                        }
+                    });
+
+                } else if (p.length == 5) {   //    /#!/tile/version/release/job
+                    $.ajax({
+                        type: 'GET',
+                        url:  '/v1/tiles/' + encodeURIComponent(p[1]) + '/' + encodeURIComponent(p[2]) + '/' + encodeURIComponent(p[3]) + '/' + encodeURIComponent(p[4]),
+                        success: function (data) {
+                            var html = '';
+                            html += '<h1><img src="/ico.job.png" />' +
+                                         data.job.name + '  <span class="sub">' +
+                                         'part of release <a href="#!/' + data.tile.name + '/' + data.tile.version + '/' + data.release + '">' +
+                                             data.release + '</a>' +
+                                         ', from <a href="#!/' + data.tile.name + '/' + data.tile.version + '">' +
+                                             data.tile.name + ' (' + data.tile.version + ')</a></span></h1>';
+
+                            html += propList(data.job.properties);
+                            html += tplList(data.job.templates);
+                            $('#main').html('<div id="job" class="detail">'+html+'</div>');
+                        }
+                    });
+
+                }
+            }
+        });
+        $(document.body).on('click', 'a.showhide', function (event) {
+            event.preventDefault();
+            if ($(event.target).text() == '+') {
+                $(event.target).html('&minus;').closest('li').find('code').slideDown();
+            } else {
+                $(event.target).text('+').closest('li').find('code').slideUp();
+            }
+        });
+        $(window).trigger('hashchange');
+    });
+  </script>
+</head>
+<body>
+  <header>
+  <span><img src="ts16.png" />&nbsp;<a href="/">tilesetter</a></span>
+  </header>
+  <div id="splash">
+    <form class="form">
+      <label>find a property</label>
+      <input type="text"/>
+    </form>
+  </div>
+  <div id="main">
+    <div id="landing">
+      <h1>Tilesetter &mdash; Working with Pivotal Tiles</h1>
+      <div class="col3">
+        <p>
+          <img src="/panel.upload.png">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris lacinia dui vel lorem facilisis sagittis. Mauris quis posuere mauris, non bibendum eros. Fusce tempus, quam ut ultrices iaculis, quam tortor faucibus quam, quis venenatis nisl ipsum a magna. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aliquam tempus ac justo eget placerat. Aenean suscipit molestie orci, quis efficitur diam feugiat in. Pellentesque vel congue orci. Phasellus vitae nisi diam. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae;</p>
+
+        <p>
+          <img src="/panel.search.png">
+        Proin gravida mollis ante, vitae pellentesque nunc volutpat et. Quisque vitae ex velit. Aenean leo ex, rutrum vitae ex dapibus, placerat egestas mi. Ut porttitor lectus quis felis tristique volutpat. Suspendisse non eros volutpat, elementum urna ac, tristique justo. Sed consequat odio quis arcu maximus elementum. Ut sodales hendrerit turpis non auctor. Morbi commodo, turpis in tempor maximus, leo augue auctor nunc, et aliquet massa ante nec diam.</p>
+
+        <p>
+          <img src="/panel.file.png">
+        Integer eu ante dignissim, bibendum nisi sit amet, posuere elit. Curabitur blandit augue vel maximus ultricies. Nunc tempor efficitur sapien, vel cursus mauris dictum id. Morbi et tincidunt lectus. Donec at ipsum orci. Duis pulvinar velit ut lacus interdum convallis. Suspendisse velit quam, iaculis et lectus quis, auctor vulputate erat. Nullam ex mauris, hendrerit sit amet ligula eget, sollicitudin porta lectus. Suspendisse porta orci eu diam bibendum laoreet. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Donec egestas rhoncus ipsum at interdum. Donec felis diam, placerat vel pretium quis, semper et arcu.</p>
+      </div>
+    </div>
+    <div id="catalog">
+      <h1>Our Showroom</h1>
+    </div>
+    </div>
+  </div>
+  <footer>Copyright &copy; 2016 James Hunt</footer>
+</body>
+</html>
