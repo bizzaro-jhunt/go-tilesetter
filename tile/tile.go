@@ -35,7 +35,7 @@ func init() {
 	ReleaseTarballPattern = regexp.MustCompile("^releases/(.*)\\.tgz$")
 	ReleaseSpecFilePattern = regexp.MustCompile("^\\./release.MF$")
 
-	TileSpecFilePattern = regexp.MustCompile("^metadata/tile_metadata\\.yml$")
+	TileSpecFilePattern = regexp.MustCompile("^metadata/.*\\.yml$")
 }
 
 type Template struct {
