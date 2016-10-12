@@ -38,6 +38,29 @@ func init() {
 	TileSpecFilePattern = regexp.MustCompile("^metadata/.*\\.yml$")
 }
 
+func clean(x interface{}) interface{} {
+	switch x.(type) {
+	case map[string] interface{}:
+		for k, v := range x.(map[string]interface{}) {
+			x.(map[string]interface{})[k] = clean(v)
+		}
+
+	case []interface{}:
+		for i, v := range x.([]interface{}) {
+			x.([]interface{})[i] = clean(v)
+		}
+
+	case map[interface{}] interface{}:
+		m := make(map[string] interface{})
+		for k, v := range x.(map[interface{}] interface{}) {
+			m[fmt.Sprintf("%v", k)] = clean(v)
+		}
+		return m
+	}
+
+	return x
+}
+
 type Template struct {
 	Path     string `json:"path"`
 	Contents string `json:"contents"`
@@ -299,7 +322,7 @@ func unpackJob(f io.Reader) (Job, error) {
 				p.Description = fmt.Sprintf("%s", x)
 			}
 			if x, ok := v["default"]; ok {
-				p.Default = x
+				p.Default = clean(x)
 			}
 			j.Properties = append(j.Properties, p)
 		}

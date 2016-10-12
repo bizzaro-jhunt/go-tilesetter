@@ -246,6 +246,9 @@ footer {
             if (typeof(v) === "undefined") {
                 return '';
             }
+            if (typeof(v) === typeof({})) {
+                var v = "<xmp>" + JSON.stringify(v, null, 2) + "</xmp>";
+            }
             if (v == "") {
                 v = "\"\"";
             }
