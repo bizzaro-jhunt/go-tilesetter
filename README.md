@@ -63,7 +63,7 @@ there isn't a way to do this from within the web UI, so we get to
 use curl!
 
 ```
-curl -XPORT http://localhost:5001/upload -Ftile=@/path/to/tile
+curl -XPOST http://localhost:5001/upload -Ftile=@/path/to/tile
 ```
 
 Note that it may take a while to upload, especially if its a large
