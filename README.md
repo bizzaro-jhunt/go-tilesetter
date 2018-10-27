@@ -51,7 +51,7 @@ go install github.com/jhunt/go-tilesetter
 To run it, assuming that `$GOPATH/bin` is in your `$PATH`:
 
 ```
-go-tilesetter api $GOPATH/src/github/jhunt/go-tilesetter/web/ui
+go-tilesetter api $GOPATH/src/github.com/jhunt/go-tilesetter/web/ui
 ```
 
 That will start up a daemon listening on port 5001.  You can
